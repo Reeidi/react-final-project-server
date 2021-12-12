@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
     firstName: { type: String, required: true, minlength: 3, validate: /^[a-zA-Z]+$/i },
     lastName: { type: String, required: true, minlength: 5, validate: /^[a-zA-Z]+$/i },
     email: { type: String, required: true },
+    age: { type: Number, requrred: true },
     password: { type: String, required: true, minlength: 4 },
     posts: [
         {

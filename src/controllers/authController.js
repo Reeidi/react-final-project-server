@@ -12,6 +12,7 @@ router.post('/register', isGuest, async (req, res) => {
     const userData = {
         firstName: req.body.firstName,
         lastName: req.body.lastName,
+        age: req.body.age,
         email: req.body.email,
         password: req.body.password,
         repeatPassword: req.body.repeatPassword,
@@ -24,11 +25,11 @@ router.post('/register', isGuest, async (req, res) => {
     
         await authService.register(userData);
         let token = await authService.login(userData);
-        res.cookie(AUTH_COOKIE_NAME, token);
-        res.redirect('/');
+        res.send({message:"SUCCESS!", token: token});
     }
     catch (error) {
-        res.render('auth/register', { error })
+        res.send({error: error});
+        console.log('error:', error);
     }
 });
 
