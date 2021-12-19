@@ -22,12 +22,37 @@ exports.auth = function (req, res, next) {
     }
 };
 
-exports.isAuthenticated = function (req, res, next) {
-    if (req.user) {
-        next();
+exports.readToken = function (req, res, next) {
+    const token = req.headers['x-authorization'];
+    if (token) {
+        jwt.verify(token, JWT_SECRET)
+            .then(decodedToken => {
+                req.user = decodedToken;
+                next();
+            })
+            .catch(error => {
+                console.log('error ', error);
+                next();
+            });
     } else {
-        // res.status(401).render('404');
-        res.redirect('/auth/login');
+        next();
+    }
+}
+
+exports.isAuthenticated = function (req, res, next) {
+    const token = req.headers['x-authorization'];
+    if (token) {
+        jwt.verify(token, JWT_SECRET)
+            .then(decodedToken => {
+                req.user = decodedToken
+                next();
+            })
+            .catch(error => {
+                console.log('error ', error);
+                return res.status(401).send({ error: "Unauthorized" });
+            });
+    } else {
+        return res.status(401).send({ error: "Unauthorized" });
     }
 };
 
@@ -41,11 +66,10 @@ exports.isGuest = function (req, res, next) {
 
 exports.isAuthor = async function (req, res, next) {
     let post = await postService.getOne(req.params.postId);
-    if (post.author.toString() === req.user?._id) {
+    if (post.author._id.toString() === req.user?._id) {
         next();
     } else {
-        res.redirect('/');
-        // res.status(401).render('404');
+        return res.status(401).send({ error: "Unauthorized" });
     }
 };
 

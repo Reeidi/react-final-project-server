@@ -2,9 +2,9 @@ const Post = require('../models/Post');
 
 const create = (postData) => Post.create(postData);
 
-const getOne = async (postId) => await Post.findById(postId).lean();
+const getOne = async (postId) => await Post.findById(postId).populate('author').lean();
 
-const getAll = async () => await Post.find().lean();
+const getAll = async () => await Post.find().populate('author').lean();
 
 const getForUser = async (userId) => await Post.find({ author: userId }).lean();
 
@@ -12,8 +12,16 @@ const vote = async (postId, userId, vote) => {
     return Post.findOneAndUpdate(
         { _id: postId },
         {
-            $push: { votes: [userId] },
-            $inc: { rating: vote }
+            $push: { votes: [userId] }
+        }
+    );
+};
+
+const downvote = async (postId, userId, vote) => {
+    return Post.findOneAndUpdate(
+        { _id: postId },
+        {
+            $pull: { votes: { $elemMatch: { _id: userId } } }
         }
     );
 };
@@ -28,6 +36,7 @@ module.exports = {
     getAll,
     getForUser,
     vote,
+    downvote,
     updateOne,
     deleteOne,
 };

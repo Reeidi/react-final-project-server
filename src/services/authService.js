@@ -10,7 +10,6 @@ async function register(userData) {
 async function login(userData) {
     let email = userData.email;
     let user = await User.findOne({ email });
-
     if (!user) {
         throw new Error('Invalid email or password');
     }
@@ -25,7 +24,14 @@ async function login(userData) {
         email: user.email
     };
 
-    return await jwt.sign(payload, JWT_SECRET, { expiresIn: 3600 });
+    let token = await jwt.sign(payload, JWT_SECRET, { expiresIn: 3600 });
+
+    let result = {
+        user,
+        token
+    };
+
+    return result;
 }
 
 module.exports = {

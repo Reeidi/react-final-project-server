@@ -22,14 +22,14 @@ router.post('/register', isGuest, async (req, res) => {
         if (userData.password !== userData.repeatPassword) {
             throw new Error('Password mismatch!');
         }
-    
+
         await authService.register(userData);
         let token = await authService.login(userData);
-        res.send({message:"SUCCESS!", token: token});
+        res.send({ success: true });
     }
     catch (error) {
-        res.send({error: error});
-        console.log('error:', error);
+        console.log({ success: false, error });
+        res.send({ success: false, error: error.message });
     }
 });
 
@@ -44,18 +44,17 @@ router.post('/login', isGuest, async (req, res) => {
     };
 
     try {
-        let token = await authService.login(userData);
-        res.cookie(AUTH_COOKIE_NAME, token);
-        res.redirect('/');
+        let response = await authService.login(userData);
+        res.send(response);
     }
     catch (error) {
-        res.render('auth/login', { error })
+        console.log({ success: false, error });
+        res.send({ success: false, error: error.message });
     }
 });
 
 router.get('/logout', isAuthenticated, (req, res) => {
-    res.clearCookie(AUTH_COOKIE_NAME);
-    res.redirect('/');
+    res.send({ success: true });
 })
 
 exports.router = router;

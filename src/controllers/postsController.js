@@ -1,15 +1,21 @@
 const router = require('express').Router();
 
-const { isAuthenticated, isAuthor, isNotAuthor } = require('../middlewares/authMiddleware');
+const { readToken, isAuthenticated, isAuthor, isNotAuthor } = require('../middlewares/authMiddleware');
 const postService = require('../services/postService');
 const userService = require('../services/userService');
 
-router.get('/', async (req, res) => {
+router.get('/', readToken, async (req, res) => {
     try {
         let posts = await postService.getAll();
-        res.render('posts', { posts });
+        let result = posts.map(post => {
+            let r = { ...post, userLikesImage: post.votes.some(x => x.toString() == req.user?._id) };
+            return r;
+        });
+
+        res.send(JSON.stringify(result));
     } catch (error) {
-        res.render('posts', { error })
+        console.log({ success: false, error });
+        res.send({ success: false, error: error.message });
     }
 });
 
@@ -19,52 +25,50 @@ router.get('/create', isAuthenticated, (req, res) => {
 
 router.post('/create', isAuthenticated, async (req, res) => {
     try {
-        let postData = { ...req.body, author: req.user._id }; // Quick&dirty way to add author ID to the incoming request data.
-        await postService.create(postData);
-
-        res.redirect('/posts');
+        await postService.create(req.body);
+        res.send({ success: true });
     } catch (error) {
-        res.render('posts/create', { error });
+        console.log({ success: false, error });
+        res.send({ success: false, error: error.message });
     }
 });
 
-router.get('/:postId/details', async (req, res) => {
+router.get('/:postId', readToken, async (req, res) => {
     try {
         let post = await postService.getOne(req.params.postId);
-
-        console.log(JSON.stringify(post));
-        let authorName = '???';
-        let isAuthor = post.author.toString() === req.user?._id; // post.author is a Mongo ObjectID, so need to convert to string.
+        
+        let isAuthor = post.author._id.toString() === req.user?._id; // post.author._id is a Mongo ObjectID, so need to convert to string.
         let users = await userService.getByIds(post.votes);
 
         let hasVoted = post.votes.some(x => x.toString() === req.user?._id);
-
         let rating = post.rating;
         let likesString = users.length > 0 ? users.map(x => x.email).join(', ') : "No one has voted yet."
 
-        res.render('posts/details', { ...post, authorName, isAuthor, hasVoted, rating, likesString });
+        let result = { ...post, isAuthor };
+        res.send(JSON.stringify(result));
     } catch (error) {
-        res.render('posts', { error })
+        console.log({ success: false, error });
+        res.send({ success: false, error: error.message });
     }
 });
 
-router.get('/:postId/vote/:vote', isAuthenticated, isNotAuthor, async (req, res) => {
+router.get('/:postId/vote', isAuthenticated, async (req, res) => {
     try {
         let post = await postService.getOne(req.params.postId);
 
         if (post.votes.some(x => x.toString() === req.user._id)) {
-            throw new Error('You have already voted!')
-        }
-
-        if (req.params.vote == 1) {
+            //unliking
+            await postService.downvote(req.params.postId, req.user._id, -1);
+        } else {
+            //liking
             await postService.vote(req.params.postId, req.user._id, 1);
-        } else if (req.params.vote == -1) {
-            await postService.vote(req.params.postId, req.user._id, -1);
         }
 
-        res.redirect(`/posts/${req.params.postId}/details`);
+        let updatedPost = await postService.getOne(req.params.postId);
+        res.send({ success: true, likesCount: updatedPost.votes.length });
     } catch (error) {
-        res.render('posts', { error })
+        console.log({ success: false, error });
+        res.send({ success: false, error: error.message });
     }
 });
 
@@ -80,21 +84,21 @@ router.get('/:postId/edit', isAuthenticated, isAuthor, async (req, res) => {
 
 router.post('/:postId/edit', isAuthenticated, isAuthor, async (req, res) => {
     try {
-        await postService.updateOne(req.params.postId, req.body);
-
-        res.redirect(`/posts/${req.params.postId}/details`);
+        let result = await postService.updateOne(req.params.postId, req.body);
+        res.send({ success: true, result });
     } catch (error) {
-        res.render('posts', { error })
+        console.log({ success: false, error });
+        res.send({ success: false, error: error.message });
     }
 });
 
-router.get('/:postId/delete', isAuthenticated, isAuthor, async (req, res) => {
+router.delete('/:postId', isAuthenticated, isAuthor, async (req, res) => {
     try {
         await postService.deleteOne(req.params.postId);
-
-        res.redirect('/posts');
+        res.send({ success: true });
     } catch (error) {
-        res.render('posts', { error })
+        console.log({ success: false, error });
+        res.send({ success: false, error: error.message });
     }
 });
 

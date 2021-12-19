@@ -3,9 +3,9 @@ const mongoose = require('mongoose');
 const User = require('./User');
 
 let postSchema = new mongoose.Schema({
+    title: { type: String, required: true, minlength: 3 },
     description: { type: String, required: true, minlength: 8 },
     imageUrl: { type: String, required: true, validate: /^https?:\/\//i },
-    dateOfCreation: { type: String, required: true, minlength: 10, maxlength: 10 },
     author: {
         type: mongoose.Types.ObjectId,
         ref: 'User'
@@ -16,6 +16,8 @@ let postSchema = new mongoose.Schema({
             ref: 'User'
         }
     ],
+}, {
+    timestamps: true
 });
 
 postSchema.post('save', async function () {
