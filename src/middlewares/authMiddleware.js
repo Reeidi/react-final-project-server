@@ -44,7 +44,7 @@ exports.isAuthenticated = function (req, res, next) {
     if (token) {
         jwt.verify(token, JWT_SECRET)
             .then(decodedToken => {
-                req.user = decodedToken
+                req.user = decodedToken;
                 next();
             })
             .catch(error => {

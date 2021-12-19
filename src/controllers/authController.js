@@ -1,24 +1,19 @@
 const router = require('express').Router();
 
-const { isGuest, isAuthenticated } = require('../middlewares/authMiddleware');
+const { readToken, isGuest, isAuthenticated } = require('../middlewares/authMiddleware');
 const authService = require('../services/authService');
-const { AUTH_COOKIE_NAME } = require('../constants');
 
-router.get('/register', isGuest, (req, res) => {
-    res.render('auth/register');
-});
-
-router.post('/register', isGuest, async (req, res) => {
-    const userData = {
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        age: req.body.age,
-        email: req.body.email,
-        password: req.body.password,
-        repeatPassword: req.body.repeatPassword,
-    };
-
+router.post('/register', readToken, isGuest, async (req, res) => {
     try {
+        const userData = {
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            age: req.body.age,
+            email: req.body.email,
+            password: req.body.password,
+            repeatPassword: req.body.repeatPassword,
+        };
+
         if (userData.password !== userData.repeatPassword) {
             throw new Error('Password mismatch!');
         }
@@ -33,17 +28,13 @@ router.post('/register', isGuest, async (req, res) => {
     }
 });
 
-router.get('/login', isGuest, (req, res) => {
-    res.render('auth/login');
-});
-
-router.post('/login', isGuest, async (req, res) => {
-    const userData = {
-        email: req.body.email,
-        password: req.body.password
-    };
-
+router.post('/login', readToken, isGuest, async (req, res) => {
     try {
+        const userData = {
+            email: req.body.email,
+            password: req.body.password
+        };
+
         let response = await authService.login(userData);
         res.send(response);
     }
