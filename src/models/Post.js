@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const User = require('./User');
 
 let postSchema = new mongoose.Schema({
-    title: { type: String, required: true, minlength: 3 },
-    description: { type: String, required: true, minlength: 8 },
+    title: { type: String, required: true, minlength: 2 },
+    description: { type: String, required: true, minlength: 2 },
     imageUrl: { type: String, required: true, validate: /^https?:\/\//i },
     author: {
         type: mongoose.Types.ObjectId,
